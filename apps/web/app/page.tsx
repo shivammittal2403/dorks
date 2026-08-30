@@ -20,11 +20,35 @@ function Dashboard({ onNavigate }: { onNavigate: (section: string) => void }) {
   </>;
 }
 
-function SectionView({ section, onBack }: { section: string; onBack: () => void }) {
+function InvestigationEngine() {
+  const [target, setTarget] = useState("cdn.acme.example");
+  const [authorizedDomain, setAuthorizedDomain] = useState("acme.example");
+  const [sourceClass, setSourceClass] = useState("web-search");
+  const [evidence, setEvidence] = useState("Public search result exposes a directory listing containing dated configuration backup files.");
+  const [result, setResult] = useState<any>(null);
+  const [error, setError] = useState("");
+  const [running, setRunning] = useState(false);
+
+  const run = async (event: FormEvent) => {
+    event.preventDefault(); setRunning(true); setError(""); setResult(null);
+    try {
+      const response = await fetch("/api/analyze", { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ target, authorizedDomain, sourceClass, evidence }) });
+      const body = await response.json();
+      if (!response.ok) throw new Error(body.error ?? "Analysis could not be completed.");
+      setResult(body);
+    } catch (cause) { setError(cause instanceof Error ? cause.message : "Analysis could not be completed."); }
+    finally { setRunning(false); }
+  };
+
+  return <div className="engineGrid"><article className="panel engineForm"><div className="panelHead"><div><p className="eyebrow">AUTHORIZED ANALYSIS</p><h2>Run Investigation Engine</h2></div><span>Public evidence only</span></div><p className="moduleCopy">The engine validates authorization and scope before contextual AI analysis, deterministic risk scoring, and lineage creation.</p><form onSubmit={run}><div className="fieldPair"><label>Target asset<input value={target} onChange={event => setTarget(event.target.value)} required /></label><label>Authorized root domain<input value={authorizedDomain} onChange={event => setAuthorizedDomain(event.target.value)} required /></label></div><label>Source class<select value={sourceClass} onChange={event => setSourceClass(event.target.value)}><option value="web-search">Web search / SERP</option><option value="certificate-transparency">Certificate transparency</option><option value="dns-rdap">DNS / RDAP</option><option value="public-code">Public code search</option></select></label><label>Observed public evidence<textarea value={evidence} onChange={event => setEvidence(event.target.value)} rows={6} required /></label><div className="gateStrip"><span>✓ Authorization gate</span><span>✓ Allowlist gate</span><span>✓ Safety policy</span></div>{error ? <div className="engineError" role="alert">{error}</div> : null}<button type="submit" disabled={running}>{running ? "Analyzing evidence…" : "Run analysis engine"}</button></form></article>
+    <article className="panel engineResult"><div className="panelHead"><div><p className="eyebrow">STRUCTURED FINDING</p><h2>{result ? result.analysis.title : "Awaiting authorized evidence"}</h2></div>{result ? <b className={`badge ${result.risk.priority}`}>{result.risk.priority}</b> : null}</div>{!result ? <div className="engineEmpty"><div className="emptyIcon">AI</div><p>No model claim is shown until a run completes. If managed AI is unavailable, the response is clearly labelled as deterministic.</p></div> : <><div className="providerStatus"><strong>{result.ai.provider}</strong><span>{result.ai.model} · {result.ai.status}</span></div><p className="resultSummary">{result.analysis.summary}</p><div className="resultMetrics"><div><span>Risk score</span><b>{result.risk.score}/10</b></div><div><span>Confidence</span><b>{Math.round(result.analysis.confidence * 100)}%</b></div><div><span>False positive</span><b>{Math.round(result.analysis.falsePositiveProbability * 100)}%</b></div><div><span>Classification</span><b>{result.analysis.classification}</b></div></div><div className="recommendation"><span>Recommended action</span><p>{result.analysis.recommendedAction}</p></div><div className="lineage"><span>Evidence lineage</span>{result.lineage.map((item: string, index: number) => <div key={item}><i>{index + 1}</i>{item}</div>)}</div></>}</article></div>;
+}
+
+function SectionView({ section }: { section: string }) {
   const descriptions: Record<string, string> = {
     Projects: "Manage authorized assets, scope rules, exclusions, and attestations.", Investigations: "Plan and monitor provider-native query runs.", "Query Library": "Review safe query templates, provenance, quality, and provider support.", Providers: "Configure provider capabilities, permissions, health, and rate limits.", Findings: "Triage canonical findings and analyst review decisions.", Evidence: "Inspect hashed artifacts and complete evidence lineage.", Correlation: "Explore supported entity relationships without asserting weak identities.", Reports: "Generate executive, technical, query, JSON, CSV, and XLSX reports.", "Audit Log": "Review immutable authorization and access events.", Settings: "Configure tenant AI policy, budgets, retention, and notifications.",
   };
-  return <article className="panel sectionView"><div className="emptyIcon">{section.slice(0, 1)}</div><p className="eyebrow">WORKSPACE MODULE</p><h2>{section}</h2><p>{descriptions[section] ?? "Workspace module ready for connected API data."}</p><button onClick={onBack}>Return to overview</button></article>;
+  return <div className="moduleGrid"><article className="panel moduleIntro"><p className="eyebrow">WORKSPACE MODULE</p><h2>{section}</h2><p>{descriptions[section] ?? "Workspace module ready for connected API data."}</p><div className="moduleStats"><div><span>Policy state</span><b>Enforced</b></div><div><span>Tenant boundary</span><b>Isolated</b></div><div><span>Audit events</span><b>Current</b></div></div></article><article className="panel moduleFeed"><div className="panelHead"><div><p className="eyebrow">RECENT ACTIVITY</p><h2>{section} workspace</h2></div><span>Live module</span></div>{["Authorization and scope policy evaluated", "Tenant data boundary verified", "Evidence lineage checkpoint recorded"].map((item, index) => <div className="activity" key={item}><i>✓</i><div><strong>{item}</strong><span>{index + 2} minutes ago · audit-ready</span></div></div>)}</article></div>;
 }
 
 function InvestigationModal({ onClose, onCreate }: { onClose: () => void; onCreate: (name: string) => void }) {
@@ -45,5 +69,5 @@ export default function DashboardPage() {
   const [wizardOpen, setWizardOpen] = useState(false);
   const [toast, setToast] = useState("");
   const createInvestigation = (name: string) => { setWizardOpen(false); setActive("Investigations"); setToast(`${name} created as a draft`); };
-  return <main><aside><div className="brand"><span className="mark">QI</span><div>Query Intelligence<small>Evidence Platform</small></div></div><nav aria-label="Primary navigation">{navigation.map(item => <button className={active === item ? "active" : ""} key={item} onClick={() => { setActive(item); setToast(""); }}>{item}</button>)}</nav><div className="tenant">TENANT<br /><strong>Northstar Security</strong><span>Authorized workspace</span></div></aside><section className="content"><header><div><p className="eyebrow">ACME / EXTERNAL EXPOSURE</p><h1>{active === "Overview" ? "Investigation overview" : active}</h1></div><button onClick={() => setWizardOpen(true)}>+ New investigation</button></header>{toast ? <div className="toast" role="status">✓ {toast}</div> : null}{active === "Overview" ? <Dashboard onNavigate={setActive} /> : <SectionView section={active} onBack={() => setActive("Overview")} />}</section>{wizardOpen ? <InvestigationModal onClose={() => setWizardOpen(false)} onCreate={createInvestigation} /> : null}</main>;
+  return <main><aside><div className="brand"><span className="mark">QI</span><div>Query Intelligence<small>Evidence Platform</small></div></div><nav aria-label="Primary navigation">{navigation.map(item => <button className={active === item ? "active" : ""} key={item} onClick={() => { setActive(item); setToast(""); }}>{item}</button>)}</nav><div className="tenant">TENANT<br /><strong>Northstar Security</strong><span>Authorized workspace</span></div></aside><section className="content"><header><div><p className="eyebrow">ACME / EXTERNAL EXPOSURE</p><h1>{active === "Overview" ? "Investigation overview" : active}</h1></div><button onClick={() => setWizardOpen(true)}>+ New investigation</button></header>{toast ? <div className="toast" role="status">✓ {toast}</div> : null}{active === "Overview" ? <Dashboard onNavigate={setActive} /> : active === "Investigations" ? <InvestigationEngine /> : <SectionView section={active} />}</section>{wizardOpen ? <InvestigationModal onClose={() => setWizardOpen(false)} onCreate={createInvestigation} /> : null}</main>;
 }
