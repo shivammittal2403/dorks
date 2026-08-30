@@ -1,0 +1,5 @@
+INSERT INTO tenant(id,name) VALUES ('10000000-0000-0000-0000-000000000001','Northstar Security');
+INSERT INTO project(id,tenant_id,name,status,authorization) VALUES ('20000000-0000-0000-0000-000000000001','10000000-0000-0000-0000-000000000001','ACME External Exposure','authorized','{"authorized_by":"ACME Security","authority_reference":"DEMO-AUTH-001","valid_until":"2099-12-31T00:00:00Z"}');
+INSERT INTO authorized_asset(tenant_id,project_id,asset_type,value) VALUES ('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','domain','acme.example');
+INSERT INTO scope_rule(tenant_id,project_id,rule_type,asset_type,value,source_classes) VALUES ('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','allow','domain','*.acme.example','["web_search","certificate_transparency","dns_rdap"]'),('10000000-0000-0000-0000-000000000001','20000000-0000-0000-0000-000000000001','deny','domain','private.acme.example','[]');
+INSERT INTO provider(name,adapter_version,source_class,status) VALUES ('deterministic-demo','1.0.0','web_search','active');

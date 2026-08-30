@@ -1,0 +1,13 @@
+.env
+__pycache__/
+.pytest_cache/
+*.pyc
+*.egg-info/
+*.tsbuildinfo
+node_modules/
+.next/
+dist/
+coverage/
+work/
+outputs/
+evidence/
